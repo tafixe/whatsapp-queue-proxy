@@ -47,9 +47,9 @@ async function processQueue() {
         body = {
           number: msg.number,
           mediatype: 'image',
-          mimetype: 'image/jpeg',
-          caption: msg.caption,
           media: msg.media,
+          caption: msg.caption,
+          mimetype: 'image/jpeg',
           fileName: 'post.jpg',
         };
       } else {
