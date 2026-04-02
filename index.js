@@ -12,11 +12,11 @@ let processing = false;
 
 // Recebe mensagens do WordPress
 app.post('/send', (req, res) => {
-  const { number, caption, media, text } = req.body;
-  if (!number || (!caption && !text)) {
-    return res.status(400).json({ error: 'number and caption/text required' });
+  const { number, text } = req.body;
+  if (!number || !text) {
+    return res.status(400).json({ error: 'number and text required' });
   }
-  queue.push({ number, caption: caption || text, media });
+  queue.push({ number, text });
   console.log(`[Queue] +1 mensagem. Fila: ${queue.length}`);
   res.json({ queued: true, position: queue.length });
   processQueue();
@@ -41,21 +41,8 @@ async function processQueue() {
     console.log(`[Send] Enviando para ${msg.number}. Restam: ${queue.length}`);
 
     try {
-      let url, body;
-      if (msg.media) {
-        url = `${EVOLUTION_API}/message/sendMedia/${INSTANCE}`;
-        body = {
-          number: msg.number,
-          mediatype: 'image',
-          media: msg.media,
-          caption: msg.caption,
-          mimetype: 'image/jpeg',
-          fileName: 'post.jpg',
-        };
-      } else {
-        url = `${EVOLUTION_API}/message/sendText/${INSTANCE}`;
-        body = { number: msg.number, text: msg.caption };
-      }
+      const url = `${EVOLUTION_API}/message/sendText/${INSTANCE}`;
+      const body = { number: msg.number, text: msg.text };
       const response = await fetch(url, {
         method: 'POST',
         headers: {
