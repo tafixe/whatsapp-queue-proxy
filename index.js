@@ -12,11 +12,11 @@ let processing = false;
 
 // Recebe mensagens do WordPress
 app.post('/send', (req, res) => {
-  const { number, text } = req.body;
-  if (!number || !text) {
-    return res.status(400).json({ error: 'number and text required' });
+  const { number, caption, media, text } = req.body;
+  if (!number || (!caption && !text)) {
+    return res.status(400).json({ error: 'number and caption/text required' });
   }
-  queue.push({ number, text });
+  queue.push({ number, caption: caption || text, media });
   console.log(`[Queue] +1 mensagem. Fila: ${queue.length}`);
   res.json({ queued: true, position: queue.length });
   processQueue();
@@ -41,13 +41,28 @@ async function processQueue() {
     console.log(`[Send] Enviando para ${msg.number}. Restam: ${queue.length}`);
 
     try {
-      const response = await fetch(`${EVOLUTION_API}/message/sendText/${INSTANCE}`, {
+      let url, body;
+      if (msg.media) {
+        url = `${EVOLUTION_API}/message/sendMedia/${INSTANCE}`;
+        body = {
+          number: msg.number,
+          mediatype: 'image',
+          mimetype: 'image/jpeg',
+          caption: msg.caption,
+          media: msg.media,
+          fileName: 'post.jpg',
+        };
+      } else {
+        url = `${EVOLUTION_API}/message/sendText/${INSTANCE}`;
+        body = { number: msg.number, text: msg.caption };
+      }
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'apikey': API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ number: msg.number, text: msg.text }),
+        body: JSON.stringify(body),
       });
       const data = await response.json();
       console.log(`[Send] OK - Status: ${data.status || 'delivered'}`);
